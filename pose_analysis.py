@@ -241,9 +241,7 @@ def classify_exercise(landmarks, frame_width, frame_height):
             knee_angle
         )
 
-    # --------------------------------
     # 1. Push-up
-    # --------------------------------
     if (
         torso_angle < 35
         and wrist[1] > shoulder[1]
@@ -255,9 +253,7 @@ def classify_exercise(landmarks, frame_width, frame_height):
             knee_angle
         )
 
-    # --------------------------------
     # 2. Lunge
-    # --------------------------------
     # 양쪽 다리 모두 인식되어야 함
     both_legs_visible = visible([
         23, 25, 27,
@@ -337,9 +333,7 @@ def classify_exercise(landmarks, frame_width, frame_height):
                 rear_knee_angle
             )
 
-    # --------------------------------
     # 3. Squat
-    # --------------------------------
     if (
         torso_angle > 45
         and knee_angle < 150
