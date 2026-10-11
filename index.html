@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Exercise WebRTC</title>
+</head>
+<body>
+  <h2>MediaPipe Exercise Analysis</h2>
+
+  <video id="video"
+         autoplay
+         playsinline
+         muted
+         width="640"></video>
+
+  <button onclick="start()">Start WebRTC</button>
+
+  <p id="status">Waiting</p>
+
+  <script>
+    let pc = null;
+
+    async function start() {
+      if (pc) pc.close();
+
+      pc = new RTCPeerConnection();
+
+      pc.addTransceiver("video", {
+        direction: "recvonly"
+      });
+
+      pc.ontrack = (event) => {
+        document.getElementById("video").srcObject =
+          event.streams[0];
+      };
+
+      pc.onconnectionstatechange = () => {
+        document.getElementById("status").textContent =
+          pc.connectionState;
+      };
+
+      document.getElementById("status").textContent =
+        "Creating offer";
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      if (pc.iceGatheringState !== "complete") {
+        await new Promise(resolve => {
+          pc.addEventListener(
+            "icegatheringstatechange",
+            function check() {
+              if (pc.iceGatheringState === "complete") {
+                pc.removeEventListener(
+                  "icegatheringstatechange", check
+                );
+                resolve();
+              }
+            }
+          );
+        });
+      }
+
+      try {
+        document.getElementById("status").textContent =
+          "Connecting";
+
+        const response = await fetch("/offer", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            sdp: pc.localDescription.sdp,
+            type: pc.localDescription.type
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status}`);
+        }
+
+        const answer = await response.json();
+        await pc.setRemoteDescription(answer);
+      } catch (error) {
+        document.getElementById("status").textContent =
+          `Failed: ${error.message}`;
+        throw error;
+      }
+    }
+  </script>
+</body>
+</html>
